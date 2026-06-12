@@ -1,0 +1,119 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// Community == Discord guild, 1:1 (CONTEXT.md). id IS the guild id.
+model Community {
+  id        String   @id
+  name      String
+  createdAt DateTime @default(now())
+
+  policy CommunityPolicy?
+  claims RewardClaim[]
+
+  @@map("communities")
+}
+
+model CommunityPolicy {
+  id                     String  @id @default(cuid())
+  communityId            String  @unique
+  currency               String  @default("USD")
+  dailyBudgetCents       Int
+  weeklyBudgetCents      Int
+  maxSingleRewardCents   Int
+  // amount <  autoApproveBelowCents -> auto-approved
+  // amount >= autoApproveBelowCents -> requires approval (no separate "above" field)
+  autoApproveBelowCents  Int
+  claimExpiryDays        Int     @default(30)
+  allowedCategoriesJson  String
+  allowSelfRewards       Boolean @default(false)
+  recipientCooldownHours Int     @default(24)
+
+  community Community @relation(fields: [communityId], references: [id])
+
+  @@map("community_policies")
+}
+
+model RewardClaim {
+  id                    String    @id @default(cuid())
+  communityId           String
+  recipientDiscordId    String
+  amountCents           Int
+  currency              String
+  reason                String
+  allowedCategoriesJson String
+  status                String
+  createdByType         String // "human" | "agent"
+  createdById           String
+  approvedById          String?
+  expiresAt             DateTime
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  community  Community   @relation(fields: [communityId], references: [id])
+  approvals  Approval[]
+  redemption Redemption?
+
+  @@index([communityId, status])
+  @@index([communityId, recipientDiscordId, createdAt])
+  @@map("reward_claims")
+}
+
+model Approval {
+  id         String   @id @default(cuid())
+  claimId    String
+  approverId String
+  decision   String // "approved" | "denied"
+  createdAt  DateTime @default(now())
+
+  claim RewardClaim @relation(fields: [claimId], references: [id])
+
+  @@map("approvals")
+}
+
+// Redemption codes are NEVER persisted (ADR 0002) — only Bitrefill IDs.
+// Unique claimId is the double-spend guard backstop (M5-07).
+model Redemption {
+  id                 String    @id @default(cuid())
+  claimId            String    @unique
+  bitrefillProductId String
+  bitrefillInvoiceId String?
+  bitrefillOrderId   String?
+  country            String
+  category           String
+  status             String
+  deliveredAt        DateTime?
+  createdAt          DateTime  @default(now())
+
+  claim RewardClaim @relation(fields: [claimId], references: [id])
+
+  @@map("redemptions")
+}
+
+model AuditLog {
+  id           String   @id @default(cuid())
+  communityId  String
+  actorType    String
+  actorId      String
+  action       String
+  targetType   String
+  targetId     String
+  metadataJson String?
+  createdAt    DateTime @default(now())
+
+  @@index([communityId, createdAt])
+  @@map("audit_logs")
+}
+
+model RecipientPreference {
+  recipientDiscordId String   @id
+  country            String
+  updatedAt          DateTime @updatedAt
+
+  @@map("recipient_preferences")
+}

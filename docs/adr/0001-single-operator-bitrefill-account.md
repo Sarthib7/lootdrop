@@ -1,0 +1,3 @@
+# Single operator Bitrefill account; community budgets are internal ledger limits
+
+All redemptions are paid from one LootDrop-operated Bitrefill account (the Operator Account). Community daily/weekly budgets are internal ledger limits gating claim creation — they do not correspond to any Bitrefill balance. Chosen over per-community Bitrefill keys because key onboarding/storage per guild is heavy for an MVP and Personal API keys in our DB on day 1 is an avoidable liability; the trade-off is that LootDrop carries float/funding risk when real money replaces test products (admins would prepay the operator). Schema keeps the door open to bring-your-own-key later, but nothing in MVP assumes it.

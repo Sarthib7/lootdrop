@@ -1,0 +1,27 @@
+{
+  "name": "lootdrop",
+  "private": true,
+  "version": "0.1.0",
+  "packageManager": "pnpm@10.34.3",
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "@prisma/client",
+      "@prisma/engines",
+      "esbuild",
+      "prisma"
+    ]
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "pnpm -r build",
+    "lint": "pnpm -r lint",
+    "test": "pnpm -r test",
+    "db:migrate": "pnpm --filter @lootdrop/db migrate",
+    "db:seed": "pnpm --filter @lootdrop/db seed",
+    "bot": "pnpm --filter @lootdrop/discord-bot start",
+    "bot:register": "pnpm --filter @lootdrop/discord-bot register",
+    "mcp": "pnpm --filter @lootdrop/mcp-server start"
+  }
+}

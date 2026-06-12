@@ -1,0 +1,3 @@
+# Redemption codes are never persisted; fetch on demand from Bitrefill
+
+The DB stores only Bitrefill invoice/order IDs — no redemption code/link/PIN columns exist. Delivery and re-delivery fetch redemption info from Bitrefill's order-retrieval API at send time. Chosen over encrypted-at-rest storage because it removes encryption key management and makes the local DB worthless to steal; the trade-off is a hard runtime dependency on Bitrefill's API for re-delivery. Contingency: if order retrieval turns out not to return redemption info repeatedly (day-1 verification), fall back to encrypt-until-first-delivery-then-wipe.

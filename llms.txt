@@ -1,0 +1,27 @@
+# LootDrop Docs
+
+> Agent-readable documentation pack for LootDrop, a Discord-first reward-claim system powered by Bitrefill fulfillment.
+
+## Core docs
+
+- [PRD](./PRD.md): Full product requirements document.
+- [Status](./STATUS.md): Implementation to-do list and current task board.
+- [Resources](./RESOURCES.md): Official source links and market references.
+- [Agent Index](./AGENT_INDEX.md): Chunk map and task pickup guide.
+- [Agent Skill](./agents/SKILL.md): Behavioral instructions for agents using LootDrop tools.
+
+## Chunks
+
+- [00 Project Brief](./chunks/00_project_brief.md)
+- [01 Product Strategy](./chunks/01_product_strategy.md)
+- [02 Personas and Use Cases](./chunks/02_personas_use_cases.md)
+- [03 MVP Scope](./chunks/03_mvp_scope.md)
+- [04 User Flows](./chunks/04_user_flows.md)
+- [05 Agent MCP Design](./chunks/05_agent_mcp_design.md)
+- [06 Policy Engine](./chunks/06_policy_engine.md)
+- [07 Bitrefill Integration](./chunks/07_bitrefill_integration.md)
+- [08 Discord Bot](./chunks/08_discord_bot.md)
+- [09 Data Model](./chunks/09_data_model.md)
+- [10 Security Compliance](./chunks/10_security_compliance.md)
+- [11 Roadmap](./chunks/11_roadmap.md)
+- [12 Demo Script](./chunks/12_demo_script.md)
