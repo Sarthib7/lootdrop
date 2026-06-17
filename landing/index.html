@@ -1,0 +1,501 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>LootDrop — Agent-native rewards, fulfilled by Bitrefill</title>
+  <meta name="description" content="LootDrop lets AI agents and Discord communities reward people with claimable digital loot. BountyGuard keeps spending safe with budgets, approvals and audit logs; Bitrefill fulfills gift cards, top-ups and eSIMs across 170+ countries." />
+  <meta property="og:title" content="LootDrop — Agent-native rewards, fulfilled by Bitrefill" />
+  <meta property="og:description" content="AI agents allocate value, BountyGuard enforces policy, recipients choose, Bitrefill fulfills. A safe purchasing loop for autonomous agents." />
+  <meta property="og:type" content="website" />
+  <style>
+    /* ---- Design tokens (the static-page equivalent of theme variables) ---- */
+    :root {
+      --bg: #0a0c11;
+      --bg-2: #0e1118;
+      --surface: #141925;
+      --surface-2: #1a2030;
+      --border: #283041;
+      --border-soft: #1e2532;
+      --text: #f3f5fa;
+      --text-muted: #aab4c6;       /* ~7:1 on --bg, AA pass */
+      --text-faint: #7a8499;
+      --blurple: #5865f2;          /* Discord tie-in */
+      --blurple-600: #4752e6;
+      --gold: #f5b642;             /* "loot" accent */
+      --gold-soft: #ffd27a;
+      --emerald: #34d399;          /* success / redemption codes */
+      --danger: #f87171;
+      --radius: 16px;
+      --radius-sm: 10px;
+      --maxw: 1120px;
+      --shadow: 0 10px 40px -12px rgba(0, 0, 0, 0.6);
+      --shadow-glow: 0 0 0 1px var(--border), 0 18px 50px -20px rgba(88, 101, 242, 0.45);
+      --mono: ui-monospace, "SF Mono", "JetBrains Mono", "Fira Code", Menlo, Consolas, monospace;
+      --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, Roboto, Helvetica, Arial, sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+
+    body {
+      margin: 0;
+      font-family: var(--sans);
+      color: var(--text);
+      background:
+        radial-gradient(1100px 600px at 78% -8%, rgba(88, 101, 242, 0.18), transparent 60%),
+        radial-gradient(900px 520px at 8% 4%, rgba(245, 182, 66, 0.10), transparent 55%),
+        var(--bg);
+      line-height: 1.55;
+      -webkit-font-smoothing: antialiased;
+      text-rendering: optimizeLegibility;
+    }
+
+    a { color: inherit; }
+    h1, h2, h3 { line-height: 1.12; letter-spacing: -0.02em; margin: 0; }
+    p { margin: 0; }
+    code, kbd, .mono { font-family: var(--mono); }
+
+    .wrap { max-width: var(--maxw); margin: 0 auto; padding: 0 24px; }
+    .eyebrow {
+      display: inline-flex; align-items: center; gap: 8px;
+      font-size: 12.5px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase;
+      color: var(--gold-soft);
+      background: rgba(245, 182, 66, 0.10);
+      border: 1px solid rgba(245, 182, 66, 0.28);
+      padding: 6px 12px; border-radius: 999px;
+    }
+    .muted { color: var(--text-muted); }
+    .faint { color: var(--text-faint); }
+
+    /* ---- Buttons ---- */
+    .btn {
+      display: inline-flex; align-items: center; justify-content: center; gap: 9px;
+      min-height: 46px; padding: 0 20px;
+      border-radius: 12px; font-size: 15px; font-weight: 600; text-decoration: none;
+      cursor: pointer; border: 1px solid transparent;
+      transition: transform .15s ease, background-color .15s ease, border-color .15s ease, box-shadow .15s ease;
+    }
+    .btn:focus-visible { outline: none; box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px var(--blurple); }
+    .btn-primary { background: var(--blurple); color: #fff; box-shadow: 0 10px 30px -12px rgba(88,101,242,.7); }
+    .btn-primary:hover { background: var(--blurple-600); }
+    .btn-ghost { background: var(--surface); color: var(--text); border-color: var(--border); }
+    .btn-ghost:hover { border-color: #3a445c; background: var(--surface-2); }
+    @media (prefers-reduced-motion: no-preference) {
+      .btn:hover { transform: translateY(-1px); }
+    }
+
+    /* ---- Header ---- */
+    header.site {
+      position: sticky; top: 0; z-index: 50;
+      backdrop-filter: blur(10px);
+      background: rgba(10, 12, 17, 0.72);
+      border-bottom: 1px solid var(--border-soft);
+    }
+    .nav { display: flex; align-items: center; justify-content: space-between; height: 64px; }
+    .brand { display: inline-flex; align-items: center; gap: 10px; font-weight: 800; font-size: 18px; letter-spacing: -0.02em; text-decoration: none; }
+    .brand .mark { font-size: 20px; }
+    .brand .name { background: linear-gradient(90deg, var(--gold-soft), var(--gold)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+    .nav-links { display: flex; align-items: center; gap: 6px; }
+    .nav-links a {
+      text-decoration: none; color: var(--text-muted); font-size: 14.5px; font-weight: 500;
+      padding: 8px 12px; border-radius: 9px;
+    }
+    .nav-links a:hover { color: var(--text); background: var(--surface); }
+    .nav-links a:focus-visible { outline: none; box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px var(--blurple); }
+    .nav-links .btn { min-height: 38px; padding: 0 14px; font-size: 14px; }
+    @media (max-width: 720px) { .nav-links a.hide-sm { display: none; } }
+
+    /* ---- Hero ---- */
+    .hero { padding: 84px 0 56px; }
+    .hero-grid { display: grid; grid-template-columns: 1.05fr 0.95fr; gap: 56px; align-items: center; }
+    @media (max-width: 920px) { .hero-grid { grid-template-columns: 1fr; gap: 40px; } .hero { padding: 56px 0 40px; } }
+    .hero h1 { font-size: clamp(34px, 5.2vw, 56px); font-weight: 820; margin: 22px 0 0; }
+    .hero h1 .grad { background: linear-gradient(100deg, var(--gold-soft) 0%, var(--gold) 35%, var(--blurple) 110%); -webkit-background-clip: text; background-clip: text; color: transparent; }
+    .hero .sub { margin-top: 20px; font-size: clamp(16px, 2.1vw, 19px); color: var(--text-muted); max-width: 36ch; }
+    .hero .cta { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 30px; }
+    .hero .trust { margin-top: 26px; display: flex; flex-wrap: wrap; gap: 18px 26px; color: var(--text-faint); font-size: 13.5px; }
+    .hero .trust span { display: inline-flex; align-items: center; gap: 7px; }
+    .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--emerald); box-shadow: 0 0 10px var(--emerald); }
+
+    /* ---- Discord-style demo card ---- */
+    .demo {
+      background: linear-gradient(180deg, var(--surface) 0%, var(--bg-2) 100%);
+      border: 1px solid var(--border);
+      border-radius: 20px; padding: 16px; box-shadow: var(--shadow-glow);
+    }
+    .demo-head { display: flex; align-items: center; gap: 9px; padding: 4px 6px 12px; border-bottom: 1px solid var(--border-soft); }
+    .demo-head .hashtag { color: var(--text-faint); font-weight: 700; }
+    .demo-head .ch { font-weight: 600; font-size: 14px; }
+    .demo-head .tag { margin-left: auto; font-size: 11px; color: var(--gold-soft); background: rgba(245,182,66,.1); border: 1px solid rgba(245,182,66,.25); padding: 3px 8px; border-radius: 999px; }
+    .msg { display: flex; gap: 11px; padding: 12px 6px; }
+    .msg + .msg { border-top: 1px solid var(--border-soft); }
+    .ava { flex: 0 0 38px; width: 38px; height: 38px; border-radius: 50%; display: grid; place-items: center; font-size: 17px; font-weight: 700; }
+    .ava.bot { background: rgba(88,101,242,.18); color: #c5cbff; border: 1px solid rgba(88,101,242,.4); }
+    .ava.admin { background: rgba(245,182,66,.16); color: var(--gold-soft); border: 1px solid rgba(245,182,66,.4); }
+    .ava.alice { background: rgba(52,211,153,.16); color: #8af0c8; border: 1px solid rgba(52,211,153,.4); }
+    .msg-body { min-width: 0; }
+    .who { font-size: 13.5px; font-weight: 700; }
+    .who .bot-pill { font-size: 9.5px; font-weight: 700; letter-spacing: .04em; background: var(--blurple); color: #fff; padding: 1px 5px; border-radius: 4px; margin-left: 7px; vertical-align: middle; }
+    .who .time { font-size: 11px; color: var(--text-faint); font-weight: 500; margin-left: 8px; }
+    .line { font-size: 14px; color: #dde2ee; margin-top: 2px; }
+    .line .cmd { color: var(--blurple); font-family: var(--mono); }
+    .line .mention { color: #c5cbff; background: rgba(88,101,242,.16); border-radius: 4px; padding: 0 4px; }
+    .card-embed { margin-top: 8px; border-left: 3px solid var(--gold); background: var(--surface-2); border-radius: 6px; padding: 10px 12px; font-size: 13px; }
+    .card-embed .k { color: var(--text-faint); }
+    .pillrow { display: flex; gap: 8px; margin-top: 9px; flex-wrap: wrap; }
+    .pill { font-size: 12.5px; font-weight: 600; padding: 6px 12px; border-radius: 8px; border: 1px solid var(--border); }
+    .pill.ok { background: rgba(52,211,153,.14); border-color: rgba(52,211,153,.4); color: #8af0c8; }
+    .pill.no { background: rgba(248,113,113,.1); border-color: rgba(248,113,113,.35); color: #fca5a5; }
+    .pill.sel { background: var(--surface); color: var(--text-muted); }
+    .code-reveal { margin-top: 8px; font-family: var(--mono); font-size: 14px; background: #0c1d17; border: 1px solid rgba(52,211,153,.4); color: var(--emerald); border-radius: 8px; padding: 9px 12px; display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+    .code-reveal .lock { font-size: 11px; color: #5fbf97; font-family: var(--sans); }
+    .audit { font-size: 13px; color: var(--text-muted); }
+    .audit .red { color: var(--text-faint); font-family: var(--mono); }
+
+    @media (prefers-reduced-motion: no-preference) {
+      .demo .msg { opacity: 0; transform: translateY(6px); animation: rise .5s ease forwards; }
+      .demo .msg:nth-child(2) { animation-delay: .15s; }
+      .demo .msg:nth-child(3) { animation-delay: .5s; }
+      .demo .msg:nth-child(4) { animation-delay: .9s; }
+      .demo .msg:nth-child(5) { animation-delay: 1.3s; }
+      @keyframes rise { to { opacity: 1; transform: none; } }
+    }
+
+    /* ---- Sections ---- */
+    section { padding: 64px 0; border-top: 1px solid var(--border-soft); }
+    .sec-head { max-width: 60ch; margin-bottom: 40px; }
+    .sec-head h2 { font-size: clamp(26px, 3.6vw, 36px); font-weight: 760; }
+    .sec-head p { margin-top: 14px; color: var(--text-muted); font-size: 17px; }
+
+    /* ---- Flow steps ---- */
+    .steps { display: grid; grid-template-columns: repeat(5, 1fr); gap: 14px; }
+    @media (max-width: 980px) { .steps { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 560px) { .steps { grid-template-columns: 1fr; } }
+    .step { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; position: relative; transition: border-color .15s ease, transform .15s ease; }
+    @media (prefers-reduced-motion: no-preference) { .step:hover { transform: translateY(-3px); border-color: #3a445c; } }
+    .step .n { font-family: var(--mono); font-size: 12px; color: var(--gold); font-weight: 700; }
+    .step .ico { font-size: 24px; margin: 6px 0 10px; }
+    .step h3 { font-size: 16px; }
+    .step p { margin-top: 8px; font-size: 13.5px; color: var(--text-muted); }
+    .step code { font-size: 12px; background: var(--surface-2); padding: 1px 5px; border-radius: 5px; color: var(--gold-soft); }
+
+    /* ---- Feature grids ---- */
+    .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+    @media (max-width: 860px) { .grid-3 { grid-template-columns: 1fr; } }
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    @media (max-width: 860px) { .grid-2 { grid-template-columns: 1fr; } }
+    .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 24px; }
+    .card h3 { font-size: 18px; display: flex; align-items: center; gap: 10px; }
+    .card p { margin-top: 10px; color: var(--text-muted); font-size: 14.5px; }
+    .feat-list { list-style: none; padding: 0; margin: 14px 0 0; display: grid; gap: 9px; }
+    .feat-list li { display: flex; gap: 10px; font-size: 14px; color: var(--text-muted); align-items: flex-start; }
+    .feat-list li .check { color: var(--emerald); flex: 0 0 auto; font-weight: 700; }
+
+    .chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px; }
+    .chip { font-size: 13px; font-weight: 600; padding: 7px 13px; border-radius: 9px; background: var(--surface-2); border: 1px solid var(--border); color: var(--text-muted); }
+
+    /* ---- Code block ---- */
+    .codeblock { background: #0b1019; border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+    .codeblock .bar { display: flex; align-items: center; gap: 7px; padding: 11px 16px; border-bottom: 1px solid var(--border-soft); background: var(--surface); }
+    .codeblock .bar .b { width: 11px; height: 11px; border-radius: 50%; }
+    .codeblock .bar .b1 { background: #ff5f57; } .codeblock .bar .b2 { background: #febc2e; } .codeblock .bar .b3 { background: #28c840; }
+    .codeblock .bar .file { margin-left: 8px; font-size: 12.5px; color: var(--text-faint); font-family: var(--mono); }
+    .codeblock pre { margin: 0; padding: 18px 20px; overflow-x: auto; font-family: var(--mono); font-size: 13px; line-height: 1.7; color: #d7deec; }
+    .codeblock .c { color: var(--text-faint); }   /* comment */
+    .codeblock .p { color: var(--emerald); }       /* prompt $ */
+    .codeblock .t { color: var(--gold-soft); }      /* token/cmd */
+
+    /* ---- Tech stack ---- */
+    .stack { display: flex; flex-wrap: wrap; gap: 10px; }
+
+    /* ---- Footer ---- */
+    footer.site { padding: 48px 0 64px; border-top: 1px solid var(--border-soft); color: var(--text-faint); }
+    .foot { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 20px; align-items: center; }
+    .foot-links { display: flex; gap: 18px; flex-wrap: wrap; }
+    .foot-links a { color: var(--text-muted); text-decoration: none; font-size: 14px; }
+    .foot-links a:hover { color: var(--text); }
+    .foot-links a:focus-visible { outline: none; box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px var(--blurple); border-radius: 6px; }
+
+    .note { font-size: 12.5px; color: var(--gold-soft); background: rgba(245,182,66,.08); border: 1px dashed rgba(245,182,66,.35); border-radius: 8px; padding: 4px 9px; }
+
+    .skip { position: absolute; left: -999px; }
+    .skip:focus { left: 16px; top: 12px; z-index: 100; background: var(--blurple); color: #fff; padding: 10px 14px; border-radius: 8px; }
+  </style>
+</head>
+<body>
+  <a href="#main" class="skip">Skip to content</a>
+
+  <header class="site">
+    <div class="wrap nav">
+      <a class="brand" href="#top" aria-label="LootDrop home">
+        <span class="mark" aria-hidden="true">🎁</span><span class="name">LootDrop</span>
+      </a>
+      <nav class="nav-links" aria-label="Primary">
+        <a href="#how" class="hide-sm">How it works</a>
+        <a href="#safety" class="hide-sm">BountyGuard</a>
+        <a href="#bitrefill" class="hide-sm">Bitrefill</a>
+        <a href="#run" class="hide-sm">Run it</a>
+        <!-- TODO: set real GitHub URL -->
+        <a class="btn btn-primary" href="https://github.com/Sarthib7/lootdrop" target="_blank" rel="noopener">GitHub →</a>
+      </nav>
+    </div>
+  </header>
+
+  <main id="main">
+    <a id="top"></a>
+
+    <!-- HERO -->
+    <div class="hero">
+      <div class="wrap hero-grid">
+        <div>
+          <span class="eyebrow"><span class="dot" aria-hidden="true"></span> Bitrefill hackathon · agents that buy</span>
+          <h1>Agents can buy anything.<br /><span class="grad">LootDrop makes it safe to let them.</span></h1>
+          <p class="sub">A Discord-first, agent-native reward system. AI agents allocate value, <strong>BountyGuard</strong> enforces budgets and approvals, recipients choose what they want, and <strong>Bitrefill</strong> fulfills — gift cards, top-ups and eSIMs across 170+ countries.</p>
+          <div class="cta">
+            <!-- TODO: set real demo video URL -->
+            <a class="btn btn-primary" href="VIDEO_URL" target="_blank" rel="noopener">▶ Watch the 3-min demo</a>
+            <a class="btn btn-ghost" href="#how">See how it works</a>
+          </div>
+          <div class="trust" role="list">
+            <span role="listitem"><span class="dot" aria-hidden="true"></span> Autonomous checkout from balance</span>
+            <span role="listitem"><span class="dot" aria-hidden="true"></span> MCP tools for agents</span>
+            <span role="listitem"><span class="dot" aria-hidden="true"></span> No redemption codes at rest</span>
+          </div>
+        </div>
+
+        <!-- Discord-style flow demo -->
+        <div class="demo" role="img" aria-label="A simulated Discord flow: an admin runs the reward command, BountyGuard approves it, Alice picks a test gift card in a DM and receives a private redemption code, and a redacted line is posted to the public audit log.">
+          <div class="demo-head">
+            <span class="hashtag" aria-hidden="true">#</span><span class="ch">rewards</span>
+            <span class="tag">live demo · mock mode</span>
+          </div>
+
+          <div class="msg">
+            <div class="ava admin" aria-hidden="true">S</div>
+            <div class="msg-body">
+              <div class="who">Sarthi <span class="time">today</span></div>
+              <div class="line"><span class="cmd">/reward</span> <span class="mention">@alice</span> 10 reason: MVP of tonight's match</div>
+            </div>
+          </div>
+
+          <div class="msg">
+            <div class="ava bot" aria-hidden="true">L</div>
+            <div class="msg-body">
+              <div class="who">LootDrop <span class="bot-pill">BOT</span> <span class="time">now</span></div>
+              <div class="line">New reward claim for <span class="mention">@alice</span></div>
+              <div class="card-embed"><span class="k">Amount</span> $10.00 &nbsp;·&nbsp; <span class="k">Policy</span> ✓ under $25 max ✓ within daily budget ✓ creator ≠ recipient</div>
+              <div class="pillrow"><span class="pill ok">✓ Approve</span><span class="pill no">Deny</span></div>
+            </div>
+          </div>
+
+          <div class="msg">
+            <div class="ava alice" aria-hidden="true">A</div>
+            <div class="msg-body">
+              <div class="who">Alice <span class="time">DM · private</span></div>
+              <div class="line">You received a <strong>$10 LootDrop</strong>! Choose your reward:</div>
+              <div class="pillrow"><span class="pill sel">🌐 Global</span><span class="pill sel">🎮 Gaming</span><span class="pill ok">Test Gift Card · $10</span></div>
+            </div>
+          </div>
+
+          <div class="msg">
+            <div class="ava bot" aria-hidden="true">L</div>
+            <div class="msg-body">
+              <div class="who">LootDrop <span class="bot-pill">BOT</span> <span class="time">DM · private</span></div>
+              <div class="line">🎉 Your <strong>Test Gift Card</strong> is ready!</div>
+              <div class="code-reveal"><span>Code: TEST-9F3A2C71</span><span class="lock" aria-hidden="true">🔒 only you can see this</span></div>
+            </div>
+          </div>
+
+          <div class="msg">
+            <div class="ava bot" aria-hidden="true">L</div>
+            <div class="msg-body">
+              <div class="who">LootDrop <span class="bot-pill">BOT</span> <span class="time">#audit-log</span></div>
+              <div class="audit">🎁 <span class="mention">@alice</span> received a $10 reward — MVP of tonight's match ✅ redeemed &nbsp; <span class="red">code: ••••••••</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- HOW IT WORKS -->
+    <section id="how">
+      <div class="wrap">
+        <div class="sec-head">
+          <span class="eyebrow">The loop</span>
+          <h2>Allocate → Govern → Choose → Fulfill → Prove</h2>
+          <p>Bitrefill gives agents purchasing power. LootDrop wraps that power in a policy so a community can hand it to an agent without handing over the keys.</p>
+        </div>
+        <div class="steps">
+          <div class="step">
+            <div class="n">01</div><div class="ico" aria-hidden="true">🎯</div>
+            <h3>Allocate</h3>
+            <p>An admin runs <code>/reward @alice 10</code>, or an AI agent calls <code>create_reward_claim</code> over MCP. No "buy this" command — just intent and a reason.</p>
+          </div>
+          <div class="step">
+            <div class="n">02</div><div class="ico" aria-hidden="true">🛡️</div>
+            <h3>Govern</h3>
+            <p>BountyGuard checks max reward, daily/weekly budget, self-reward and category rules. Under the threshold it auto-approves; above it, an admin approves in Discord.</p>
+          </div>
+          <div class="step">
+            <div class="n">03</div><div class="ico" aria-hidden="true">🎮</div>
+            <h3>Choose</h3>
+            <p>The recipient gets a private DM and picks country → category → product, capped at their reward value across 170+ countries.</p>
+          </div>
+          <div class="step">
+            <div class="n">04</div><div class="ico" aria-hidden="true">⚡</div>
+            <h3>Fulfill</h3>
+            <p>Bitrefill buys the product from the operator balance — autonomous checkout, no human clicks pay. Polling confirms delivery.</p>
+          </div>
+          <div class="step">
+            <div class="n">05</div><div class="ico" aria-hidden="true">🧾</div>
+            <h3>Prove</h3>
+            <p>The redemption code lands in the recipient's DM only. A redacted line hits the public audit log — proof without leaking the code.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- BOUNTYGUARD / SAFETY -->
+    <section id="safety">
+      <div class="wrap">
+        <div class="sec-head">
+          <span class="eyebrow">BountyGuard</span>
+          <h2>A policy engine, not a blank cheque</h2>
+          <p>The hard part of agentic spend isn't buying — it's bounding it. BountyGuard is the layer that lets a community trust an autonomous buyer.</p>
+        </div>
+        <div class="grid-3">
+          <div class="card">
+            <h3><span aria-hidden="true">💸</span> Spend controls</h3>
+            <ul class="feat-list">
+              <li><span class="check" aria-hidden="true">✓</span> Daily &amp; weekly community budgets, reserved at claim time</li>
+              <li><span class="check" aria-hidden="true">✓</span> Max single reward ceiling</li>
+              <li><span class="check" aria-hidden="true">✓</span> Auto-approve below threshold, human approval above</li>
+              <li><span class="check" aria-hidden="true">✓</span> Category allowlist per community</li>
+            </ul>
+          </div>
+          <div class="card">
+            <h3><span aria-hidden="true">🚫</span> Abuse guards</h3>
+            <ul class="feat-list">
+              <li><span class="check" aria-hidden="true">✓</span> Creator ≠ recipient, approver ≠ recipient</li>
+              <li><span class="check" aria-hidden="true">✓</span> Redemption double-spend guard (one order per claim)</li>
+              <li><span class="check" aria-hidden="true">✓</span> Recipient cooldown window</li>
+              <li><span class="check" aria-hidden="true">✓</span> Agent identity bound at MCP startup, never client-supplied</li>
+            </ul>
+          </div>
+          <div class="card">
+            <h3><span aria-hidden="true">🔐</span> Privacy &amp; audit</h3>
+            <ul class="feat-list">
+              <li><span class="check" aria-hidden="true">✓</span> No redemption codes at rest — fetched on demand</li>
+              <li><span class="check" aria-hidden="true">✓</span> Codes go only to the recipient's DM</li>
+              <li><span class="check" aria-hidden="true">✓</span> Public audit log is redacted by default</li>
+              <li><span class="check" aria-hidden="true">✓</span> Bitrefill API key never leaves the server</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- BITREFILL + INTERFACES -->
+    <section id="bitrefill">
+      <div class="wrap">
+        <div class="sec-head">
+          <span class="eyebrow">Powered by Bitrefill</span>
+          <h2>Real products, real rails, zero-spend demos</h2>
+        </div>
+        <div class="grid-2">
+          <div class="card">
+            <h3><span aria-hidden="true">🛍️</span> What an agent can buy</h3>
+            <p>Everything Bitrefill sells is purchasable by an agent. LootDrop maps a reward claim onto any of it.</p>
+            <div class="chips">
+              <span class="chip">Gift cards</span><span class="chip">Mobile top-ups</span><span class="chip">eSIM data</span><span class="chip">Bill payments</span><span class="chip">170+ countries</span>
+            </div>
+            <p style="margin-top:16px">Pay from account balance, Lightning, or crypto. LootDrop pays from the operator balance so checkout needs no human in the loop.</p>
+            <div class="chips"><span class="chip">Balance</span><span class="chip">Lightning</span><span class="chip">BTC / ETH</span><span class="chip">USDC / USDT</span><span class="chip">Solana</span></div>
+          </div>
+          <div class="card">
+            <h3><span aria-hidden="true">🤖</span> Two ways to drive it</h3>
+            <p><strong>Discord</strong> — slash commands, approval buttons and private DMs for humans.</p>
+            <p style="margin-top:10px"><strong>MCP server</strong> — identity-bound tools so an AI agent can act safely:</p>
+            <ul class="feat-list">
+              <li><span class="check" aria-hidden="true">✓</span> <code>create_reward_claim</code> — allocate within policy</li>
+              <li><span class="check" aria-hidden="true">✓</span> <code>list_reward_budget</code> — read remaining budget, no secrets</li>
+              <li><span class="check" aria-hidden="true">✓</span> <code>list_pending_claims</code> — admin-scoped, codes never included</li>
+            </ul>
+            <p style="margin-top:14px" class="faint">Mock mode mirrors Bitrefill's documented test products, so the whole loop — search, buy, redeem — runs with zero spend and no API key.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- RUN IT -->
+    <section id="run">
+      <div class="wrap">
+        <div class="sec-head">
+          <span class="eyebrow">Run it locally</span>
+          <h2>Two processes, mock mode, no funds needed</h2>
+          <p>Node 20+, pnpm 10, and a Discord bot token. Leave <code style="font-family:var(--mono)">BITREFILL_MODE=mock</code> to demo the full flow without spending a cent.</p>
+        </div>
+        <div class="grid-2">
+          <div class="codeblock">
+            <div class="bar"><span class="b b1"></span><span class="b b2"></span><span class="b b3"></span><span class="file">terminal — the bot</span></div>
+<pre><span class="c"># install + set up the local SQLite DB</span>
+<span class="p">$</span> <span class="t">pnpm</span> install
+<span class="p">$</span> cp .env.example .env   <span class="c"># Discord token + IDs</span>
+<span class="p">$</span> <span class="t">pnpm</span> db:migrate &amp;&amp; <span class="t">pnpm</span> db:seed
+
+<span class="c"># register slash commands, then run the bot</span>
+<span class="p">$</span> <span class="t">pnpm</span> bot:register
+<span class="p">$</span> <span class="t">pnpm</span> bot
+</pre>
+          </div>
+          <div class="codeblock">
+            <div class="bar"><span class="b b1"></span><span class="b b2"></span><span class="b b3"></span><span class="file">.mcp.json — the agent</span></div>
+<pre><span class="t">"lootdrop"</span>: {
+  <span class="t">"command"</span>: <span class="c">"pnpm"</span>,
+  <span class="t">"args"</span>: [<span class="c">"--dir"</span>, <span class="c">"&lt;repo&gt;/apps/mcp-server"</span>, <span class="c">"start"</span>],
+  <span class="t">"env"</span>: {
+    <span class="t">"LOOTDROP_COMMUNITY_ID"</span>: <span class="c">"&lt;guild id&gt;"</span>,
+    <span class="t">"LOOTDROP_AGENT_ID"</span>: <span class="c">"agent:game-agent"</span>
+  }
+}
+</pre>
+          </div>
+        </div>
+        <p style="margin-top:18px" class="muted">Then in Discord: <code style="font-family:var(--mono);background:var(--surface-2);padding:2px 7px;border-radius:6px;color:var(--gold-soft)">/reward @alice 10 reason: MVP of tonight's match</code> → Approve → Alice picks a reward in her DM → private code → redacted audit line.</p>
+      </div>
+    </section>
+
+    <!-- TECH -->
+    <section>
+      <div class="wrap">
+        <div class="sec-head" style="margin-bottom:24px">
+          <span class="eyebrow">Under the hood</span>
+          <h2>Small, typed, testable</h2>
+        </div>
+        <div class="stack">
+          <span class="chip">TypeScript</span><span class="chip">pnpm monorepo</span><span class="chip">discord.js</span><span class="chip">Model Context Protocol</span><span class="chip">Prisma + SQLite</span><span class="chip">Bitrefill (mock + live)</span><span class="chip">Vitest</span>
+        </div>
+        <p style="margin-top:18px" class="muted">Five workspaces: <code>discord-bot</code> and <code>mcp-server</code> apps over a shared <code>core</code> (BountyGuard + claim state machine + audit), <code>bitrefill</code> client, and <code>db</code>. Policy, status machine, budget reservation, double-spend and no-code-at-rest are unit-tested.</p>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site">
+    <div class="wrap foot">
+      <div>
+        <a class="brand" href="#top" aria-label="LootDrop home"><span class="mark" aria-hidden="true">🎁</span><span class="name">LootDrop</span></a>
+        <p style="margin-top:8px; font-size:13px;">Agent-native rewards, fulfilled by Bitrefill. Built for the “your AI agents can buy anything” hackathon.</p>
+      </div>
+      <nav class="foot-links" aria-label="Footer">
+        <!-- TODO: set real URLs -->
+        <a href="https://github.com/Sarthib7/lootdrop" target="_blank" rel="noopener">GitHub</a>
+        <a href="VIDEO_URL" target="_blank" rel="noopener">Demo video</a>
+        <a href="https://www.bitrefill.com" target="_blank" rel="noopener">Bitrefill</a>
+        <a href="#top">Back to top ↑</a>
+      </nav>
+    </div>
+  </footer>
+</body>
+</html>
