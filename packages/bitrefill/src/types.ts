@@ -16,12 +16,16 @@ export interface ProductQuery {
   category?: string;
   maxPriceCents?: number;
   includeTestProducts?: boolean;
+  /** Free-text keyword for the live `/products/search?q=` endpoint. */
+  query?: string;
 }
 
 export interface InvoiceRequest {
   productId: string;
   /** Idempotency: one claim -> at most one invoice. */
   claimId: string;
+  /** Denomination to buy in USD cents -> sent as `value` (dollars) to the live API. */
+  valueCents?: number;
 }
 
 export interface InvoiceResult {
