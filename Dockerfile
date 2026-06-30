@@ -15,7 +15,7 @@ WORKDIR /app
 
 FROM base AS build
 COPY . .
-RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm install --frozen-lockfile
+RUN pnpm install --frozen-lockfile
 RUN pnpm --filter @lootdrop/db generate
 RUN pnpm -r build
 
