@@ -11,7 +11,8 @@
     "test": "echo \"no tests in db package\"",
     "postinstall": "prisma generate",
     "generate": "prisma generate",
-    "migrate": "prisma db push",
+    "migrate": "prisma migrate deploy",
+    "migrate:dev": "prisma migrate dev",
     "seed": "node --import tsx src/seed.ts"
   },
   "dependencies": {

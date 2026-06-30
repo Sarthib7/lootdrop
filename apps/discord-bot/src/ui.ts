@@ -24,7 +24,7 @@ export function claimCard(claim: Claim): EmbedBuilder {
     .setTitle("🎁 Reward claim")
     .setColor(claim.status === "pending_approval" ? 0xf5a623 : 0x2ecc71)
     .addFields(
-      { name: "Recipient", value: `<@${claim.recipientDiscordId}>`, inline: true },
+      { name: "Recipient", value: `<@${claim.recipientId}>`, inline: true },
       { name: "Amount", value: fmtUsd(claim.amountCents), inline: true },
       { name: "Status", value: claim.status, inline: true },
       { name: "Reason", value: claim.reason },

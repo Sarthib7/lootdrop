@@ -1,15 +1,21 @@
 generator client {
   provider = "prisma-client-js"
+  // native = local dev/test; debian-openssl-3.0.x = node:20-slim runtime image.
+  binaryTargets = ["native", "debian-openssl-3.0.x"]
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
-// Community == Discord guild, 1:1 (CONTEXT.md). id IS the guild id.
+// A community is one chat surface, 1:1 with its platform id (CONTEXT.md):
+// Discord -> guild id, Telegram -> chat id. `platform` disambiguates the id
+// namespace and the recipient id namespace (a Discord and Telegram numeric id
+// could otherwise collide).
 model Community {
   id        String   @id
+  platform  String   @default("discord") // "discord" | "telegram"
   name      String
   createdAt DateTime @default(now())
 
@@ -42,7 +48,8 @@ model CommunityPolicy {
 model RewardClaim {
   id                    String    @id @default(cuid())
   communityId           String
-  recipientDiscordId    String
+  // Platform user id of the recipient, interpreted within the community's platform.
+  recipientId           String
   amountCents           Int
   currency              String
   reason                String
@@ -60,7 +67,7 @@ model RewardClaim {
   redemption Redemption?
 
   @@index([communityId, status])
-  @@index([communityId, recipientDiscordId, createdAt])
+  @@index([communityId, recipientId, createdAt])
   @@map("reward_claims")
 }
 
@@ -111,9 +118,11 @@ model AuditLog {
 }
 
 model RecipientPreference {
-  recipientDiscordId String   @id
-  country            String
-  updatedAt          DateTime @updatedAt
+  platform    String // "discord" | "telegram"
+  recipientId String
+  country     String
+  updatedAt   DateTime @updatedAt
 
+  @@id([platform, recipientId])
   @@map("recipient_preferences")
 }

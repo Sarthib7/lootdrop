@@ -32,7 +32,7 @@ export async function handleReward(
   await interaction.deferReply();
   const { decision, claim } = await createClaim(db, {
     communityId: interaction.guildId ?? env.guildId,
-    recipientDiscordId: user.id,
+    recipientId: user.id,
     amountCents: amount * 100,
     currency: "USD",
     reason,
@@ -86,7 +86,7 @@ export async function handleRewardsPending(
   }
   const lines = pending.map(
     (c) =>
-      `• \`${c.id}\` — <@${c.recipientDiscordId}> ${fmtUsd(c.amountCents)} — ${c.reason}`,
+      `• \`${c.id}\` — <@${c.recipientId}> ${fmtUsd(c.amountCents)} — ${c.reason}`,
   );
   await interaction.reply({ content: lines.join("\n"), ephemeral: true });
 }
@@ -113,7 +113,7 @@ export async function handleMyRewards(
   const claims = await db.rewardClaim.findMany({
     where: {
       communityId: interaction.guildId ?? env.guildId,
-      recipientDiscordId: interaction.user.id,
+      recipientId: interaction.user.id,
     },
     orderBy: { createdAt: "desc" },
     take: 10,

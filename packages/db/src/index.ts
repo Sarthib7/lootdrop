@@ -3,15 +3,13 @@ import { PrismaClient } from "@prisma/client";
 let client: PrismaClient | undefined;
 
 /**
- * Shared Prisma client. Two processes (bot + MCP server) open the same SQLite
- * file, so WAL mode is required (PRD §20).
+ * Shared Prisma client (process-wide singleton). Backed by PostgreSQL via
+ * DATABASE_URL; concurrent access across the bot and MCP server is handled
+ * natively by Postgres, so no SQLite-style PRAGMA tuning is needed.
  */
 export function getDb(): PrismaClient {
   if (!client) {
     client = new PrismaClient();
-    // Fire-and-forget: WAL + sane busy timeout for cross-process access.
-    void client.$queryRawUnsafe("PRAGMA journal_mode=WAL;");
-    void client.$queryRawUnsafe("PRAGMA busy_timeout=5000;");
   }
   return client;
 }
