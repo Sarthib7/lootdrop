@@ -18,8 +18,10 @@
     "build": "pnpm -r build",
     "lint": "pnpm -r lint",
     "test": "pnpm -r test",
-    "db:migrate": "pnpm --filter @lootdrop/db migrate",
+    "db:migrate": "pnpm --filter @lootdrop/db migrate:dev",
+    "db:migrate:deploy": "pnpm --filter @lootdrop/db migrate",
     "db:seed": "pnpm --filter @lootdrop/db seed",
+    "telegram": "pnpm --filter @lootdrop/telegram-bot start",
     "bot": "pnpm --filter @lootdrop/discord-bot start",
     "bot:register": "pnpm --filter @lootdrop/discord-bot register",
     "mcp": "pnpm --filter @lootdrop/mcp-server start"

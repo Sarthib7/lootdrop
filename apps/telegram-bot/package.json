@@ -1,24 +1,22 @@
 {
-  "name": "@lootdrop/core",
+  "name": "@lootdrop/telegram-bot",
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "main": "dist/index.js",
-  "types": "dist/index.d.ts",
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "lint": "tsc -p tsconfig.json --noEmit",
-    "test": "vitest run"
+    "test": "vitest run",
+    "start": "node --import tsx --env-file=../../.env src/index.ts"
   },
   "dependencies": {
     "@lootdrop/bitrefill": "workspace:*",
-    "@lootdrop/db": "workspace:*"
+    "@lootdrop/core": "workspace:*",
+    "@lootdrop/db": "workspace:*",
+    "grammy": "^1.44.0"
   },
   "devDependencies": {
-    "@electric-sql/pglite": "^0.5.3",
-    "@prisma/client": "6.19.3",
     "@types/node": "^22.19.21",
-    "pglite-prisma-adapter": "^0.6.1",
     "tsx": "^4.19.0",
     "typescript": "^5.6.0",
     "vitest": "^2.1.0"

@@ -58,7 +58,7 @@ export async function getBudgetSnapshot(
 export async function getRecipientRecentApprovedCount(
   db: PrismaClient,
   communityId: string,
-  recipientDiscordId: string,
+  recipientId: string,
   cooldownHours: number,
   now: Date = new Date(),
 ): Promise<number> {
@@ -66,7 +66,7 @@ export async function getRecipientRecentApprovedCount(
   return db.rewardClaim.count({
     where: {
       communityId,
-      recipientDiscordId,
+      recipientId,
       status: { in: COOLDOWN_COUNTING_STATUSES },
       createdAt: { gte: since },
     },

@@ -11,13 +11,13 @@ describe("MockBitrefillClient", () => {
 
   it("filters by category and max price", async () => {
     const c = new MockBitrefillClient();
-    const gaming = await c.searchProducts({
+    const gifts = await c.searchProducts({
       includeTestProducts: true,
-      category: "gaming",
+      category: "gifts",
       maxPriceCents: 10_00,
     });
-    expect(gaming.every((p) => p.category === "gaming")).toBe(true);
-    expect(gaming.every((p) => p.priceCents <= 10_00)).toBe(true);
+    expect(gifts.every((p) => p.category === "gifts")).toBe(true);
+    expect(gifts.every((p) => p.priceCents <= 10_00)).toBe(true);
   });
 
   it("fulfills code product and re-fetches redemption repeatedly (ADR 0002)", async () => {

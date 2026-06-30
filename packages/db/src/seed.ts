@@ -1,17 +1,24 @@
 import { getDb } from "./index.js";
 
 /**
- * Demo seed (M6-01): Sarthi Gaming Guild with the PRD §27.1 policy.
- * Community id comes from DISCORD_GUILD_ID if set, else a local placeholder.
+ * Demo seed (M6-01): Sarthi Gaming community with the PRD §27.1 policy.
+ * Community id + platform are taken from env:
+ *   LOOTDROP_PLATFORM   "discord" | "telegram" (default "telegram")
+ *   LOOTDROP_COMMUNITY_ID / TELEGRAM_COMMUNITY_ID / DISCORD_GUILD_ID
  */
 const db = getDb();
 
-const communityId = process.env.DISCORD_GUILD_ID || "guild_demo";
+const platform = process.env.LOOTDROP_PLATFORM || "telegram";
+const communityId =
+  process.env.LOOTDROP_COMMUNITY_ID ||
+  process.env.TELEGRAM_COMMUNITY_ID ||
+  process.env.DISCORD_GUILD_ID ||
+  "community_demo";
 
 const community = await db.community.upsert({
   where: { id: communityId },
-  update: {},
-  create: { id: communityId, name: "Sarthi Gaming Guild" },
+  update: { platform },
+  create: { id: communityId, platform, name: "Sarthi Gaming Community" },
 });
 
 await db.communityPolicy.upsert({
@@ -25,14 +32,11 @@ await db.communityPolicy.upsert({
     maxSingleRewardCents: 25_00,
     autoApproveBelowCents: 5_00,
     claimExpiryDays: 30,
-    allowedCategoriesJson: JSON.stringify([
-      "gaming",
-      "food",
-      "shopping",
-      "mobile_topup",
-    ]),
+    // Bitrefill's real test-product categories (gift cards = "gifts",
+    // phone refills = "phone").
+    allowedCategoriesJson: JSON.stringify(["gifts", "phone"]),
     allowSelfRewards: false,
-    recipientCooldownHours: 24,
+    recipientCooldownHours: 0,
   },
 });
 

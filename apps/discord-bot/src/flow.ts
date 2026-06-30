@@ -46,9 +46,11 @@ async function productsForClaim(
 
 export async function sendClaimDm(client: Client, claim: Claim): Promise<boolean> {
   try {
-    const user = await client.users.fetch(claim.recipientDiscordId);
+    const user = await client.users.fetch(claim.recipientId);
     const pref = await db.recipientPreference.findUnique({
-      where: { recipientDiscordId: claim.recipientDiscordId },
+      where: {
+        platform_recipientId: { platform: "discord", recipientId: claim.recipientId },
+      },
     });
     await user.send({
       content: `You received a **${fmtUsd(claim.amountCents)} LootDrop**! Reason: ${claim.reason}\nChoose your country to see your reward options.`,
@@ -70,7 +72,7 @@ export async function postAuditMessage(
   const channel = (await client.channels.fetch(env.logChannelId)) as TextChannel;
   const icon = status === "redeemed" ? "✅" : "⚠️";
   await channel.send(
-    `🎁 <@${claim.recipientDiscordId}> received a ${fmtUsd(claim.amountCents)} reward — ${claim.reason} ${icon} ${status}`,
+    `🎁 <@${claim.recipientId}> received a ${fmtUsd(claim.amountCents)} reward — ${claim.reason} ${icon} ${status}`,
   );
 }
 
@@ -89,8 +91,8 @@ export async function handleApprovalButton(
       });
       await interaction.followUp({
         content: dmOk
-          ? `Approved. <@${claim.recipientDiscordId}> got a DM to choose their reward.`
-          : `Approved, but I could not DM <@${claim.recipientDiscordId}> (DMs disabled?). Ask them to enable DMs, then I'll retry on their next interaction.`,
+          ? `Approved. <@${claim.recipientId}> got a DM to choose their reward.`
+          : `Approved, but I could not DM <@${claim.recipientId}> (DMs disabled?). Ask them to enable DMs, then I'll retry on their next interaction.`,
         ephemeral: true,
       });
     } else {
@@ -113,9 +115,11 @@ export async function handleCountrySelect(
   const country = interaction.values[0];
   const claim = await openClaimForSelection(db, claimId);
   await db.recipientPreference.upsert({
-    where: { recipientDiscordId: claim.recipientDiscordId },
+    where: {
+      platform_recipientId: { platform: "discord", recipientId: claim.recipientId },
+    },
     update: { country },
-    create: { recipientDiscordId: claim.recipientDiscordId, country },
+    create: { platform: "discord", recipientId: claim.recipientId, country },
   });
   const categories = JSON.parse(claim.allowedCategoriesJson) as string[];
   await interaction.update({
@@ -179,7 +183,9 @@ export async function handleConfirmButton(
     const result = await redeemClaim(db, bitrefill, {
       claimId,
       product,
-      country,
+      // "GLOBAL" means no region preference — pass empty so a region-locked
+      // product is not rejected against the sentinel.
+      country: country === "GLOBAL" ? "" : country,
     });
     if (result.ok && result.redemption) {
       const r = result.redemption;
@@ -217,7 +223,9 @@ export async function handleRetryButton(
 ): Promise<void> {
   const claim = await retryFailedClaim(db, claimId);
   const pref = await db.recipientPreference.findUnique({
-    where: { recipientDiscordId: claim.recipientDiscordId },
+    where: {
+      platform_recipientId: { platform: "discord", recipientId: claim.recipientId },
+    },
   });
   await interaction.update({
     content: `Let's try again. Choose your country for your ${fmtUsd(claim.amountCents)} reward.`,

@@ -18,7 +18,7 @@ const DAY_MS = 24 * 60 * 60 * 1000;
 export interface Claim {
   id: string;
   communityId: string;
-  recipientDiscordId: string;
+  recipientId: string;
   amountCents: number;
   currency: string;
   reason: string;
@@ -69,7 +69,7 @@ export async function loadPolicy(
 
 export interface CreateClaimRequest {
   communityId: string;
-  recipientDiscordId: string;
+  recipientId: string;
   amountCents: number;
   currency: string;
   reason: string;
@@ -100,14 +100,14 @@ export async function createClaim(
       getRecipientRecentApprovedCount(
         db,
         req.communityId,
-        req.recipientDiscordId,
+        req.recipientId,
         policy.recipientCooldownHours,
       ),
     ]);
 
   const decision = evaluateCreateClaim(
     {
-      recipientId: req.recipientDiscordId,
+      recipientId: req.recipientId,
       amountCents: req.amountCents,
       currency: req.currency,
       categories,
@@ -137,7 +137,7 @@ export async function createClaim(
   const claim = await db.rewardClaim.create({
     data: {
       communityId: req.communityId,
-      recipientDiscordId: req.recipientDiscordId,
+      recipientId: req.recipientId,
       amountCents: req.amountCents,
       currency: req.currency,
       reason: req.reason,
@@ -195,7 +195,7 @@ export async function approveClaim(
 ): Promise<Claim> {
   const claim = await mustGetClaim(db, claimId);
   // Approver != recipient is a hard rule; creator MAY approve (chunk 06).
-  if (approverId === claim.recipientDiscordId) {
+  if (approverId === claim.recipientId) {
     throw new ClaimError(
       "approver_is_recipient",
       "You cannot approve a reward for yourself.",
@@ -328,7 +328,10 @@ export async function redeemClaim(
   if (req.product.priceCents > claim.amountCents) {
     throw new ClaimError("invalid_product", "Product costs more than the claim value.");
   }
+  // An empty country means "no region preference" (the recipient picked
+  // Global/Other) — don't enforce a region-locked product against it.
   if (
+    req.country &&
     req.product.countries.length > 0 &&
     !req.product.countries.includes(req.country)
   ) {
@@ -359,6 +362,8 @@ export async function redeemClaim(
     const invoice = await bitrefill.createInvoice({
       productId: req.product.id,
       claimId: req.claimId,
+      // Buy the chosen denomination; required by ranged Bitrefill products.
+      valueCents: req.product.priceCents,
     });
     const order = await bitrefill.getOrder(invoice.orderId);
     await db.redemption.update({

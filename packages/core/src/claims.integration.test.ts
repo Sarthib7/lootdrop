@@ -1,5 +1,5 @@
-import { beforeEach, describe, expect, it } from "vitest";
-import { getDb } from "@lootdrop/db";
+import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
+import type { PrismaClient } from "@lootdrop/db";
 import { MockBitrefillClient } from "@lootdrop/bitrefill";
 import {
   approveClaim,
@@ -12,9 +12,20 @@ import {
   retryFailedClaim,
 } from "./claims.js";
 import { getBudgetSnapshot } from "./budget.js";
+import { makeTestDb, type TestDb } from "../test/pg.js";
 
-const db = getDb();
 const COMMUNITY = "guild_test";
+let testDb: TestDb;
+let db: PrismaClient;
+
+beforeAll(async () => {
+  testDb = await makeTestDb();
+  db = testDb.db;
+});
+
+afterAll(async () => {
+  await testDb.close();
+});
 
 async function resetDb(): Promise<void> {
   await db.auditLog.deleteMany();
@@ -50,7 +61,7 @@ async function resetDb(): Promise<void> {
 function reqFor(recipient: string, amountCents: number) {
   return {
     communityId: COMMUNITY,
-    recipientDiscordId: recipient,
+    recipientId: recipient,
     amountCents,
     currency: "USD",
     reason: "test reward",
@@ -212,6 +223,27 @@ describe("redemption", () => {
         country: "US",
       }),
     ).rejects.toThrowError(/category/);
+  });
+
+  it("empty country (Global/Other) bypasses a product's region lock", async () => {
+    const claim = await approvedSelectingClaim();
+    const bitrefill = new MockBitrefillClient();
+    const usOnly = { ...product("test-gift-card-code"), countries: ["US"] };
+    const result = await redeemClaim(db, bitrefill, {
+      claimId: claim.id,
+      product: usOnly,
+      country: "",
+    });
+    expect(result.ok).toBe(true);
+  });
+
+  it("rejects a region-locked product for a concrete mismatched country", async () => {
+    const claim = await approvedSelectingClaim();
+    const bitrefill = new MockBitrefillClient();
+    const usOnly = { ...product("test-gift-card-code"), countries: ["US"] };
+    await expect(
+      redeemClaim(db, bitrefill, { claimId: claim.id, product: usOnly, country: "DE" }),
+    ).rejects.toThrowError(/not available in your country/);
   });
 
   it("fail product -> failed claim -> retry -> success", async () => {

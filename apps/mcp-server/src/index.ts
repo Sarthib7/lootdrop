@@ -35,7 +35,9 @@ server.tool(
   {
     recipient: z
       .string()
-      .describe("Discord user id of the recipient (digits only)"),
+      .describe(
+        "Platform user id of the recipient (digits only) — a Discord user id or Telegram user id, depending on the community this server is bound to",
+      ),
     amount: z
       .number()
       .int()
@@ -51,7 +53,7 @@ server.tool(
   async (args) => {
     const { decision, claim } = await createClaim(db, {
       communityId,
-      recipientDiscordId: args.recipient.replace(/^discord:/, ""),
+      recipientId: args.recipient.replace(/^(discord|telegram):/, ""),
       amountCents: args.amount * 100,
       currency: args.currency,
       reason: args.reason,
@@ -74,8 +76,8 @@ server.tool(
                 : "requires_approval",
             message:
               decision.outcome === "auto_approved"
-                ? "Claim auto-approved below threshold. Recipient will be DMed by the bot."
-                : "Claim created and waiting for admin approval in Discord.",
+                ? "Claim auto-approved below threshold. The recipient will be messaged privately by the bot."
+                : "Claim created and waiting for admin approval in the community chat.",
           };
     return { content: [{ type: "text", text: JSON.stringify(payload) }] };
   },
@@ -130,7 +132,7 @@ server.tool(
           text: JSON.stringify(
             pending.map((c) => ({
               claim_id: c.id,
-              recipient: c.recipientDiscordId,
+              recipient: c.recipientId,
               amount: fmtUsd(c.amountCents),
               reason: c.reason,
               created_by: c.createdById,

@@ -6,3 +6,6 @@ dist/
 *.db-shm
 .env
 .DS_Store
+.agents/
+*.tsbuildinfo
+skills-lock.json
