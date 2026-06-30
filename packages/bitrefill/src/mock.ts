@@ -13,11 +13,13 @@ import type {
  * synchronously; *-fail products fail at the order stage, matching the
  * "complete invoice does not guarantee order success" behavior from the docs.
  */
+// Categories mirror Bitrefill's real test products: gift cards are "gifts",
+// phone refills are "phone" (verified against the live API).
 const TEST_PRODUCTS: Product[] = [
   {
     id: "test-gift-card-code",
     name: "Test Gift Card (code)",
-    category: "gaming",
+    category: "gifts",
     countries: [],
     priceCents: 10_00,
     isTestProduct: true,
@@ -25,7 +27,7 @@ const TEST_PRODUCTS: Product[] = [
   {
     id: "test-gift-card-link",
     name: "Test Gift Card (link)",
-    category: "shopping",
+    category: "gifts",
     countries: [],
     priceCents: 10_00,
     isTestProduct: true,
@@ -33,7 +35,7 @@ const TEST_PRODUCTS: Product[] = [
   {
     id: "test-phone-refill",
     name: "Test Phone Refill",
-    category: "mobile_topup",
+    category: "phone",
     countries: [],
     priceCents: 5_00,
     isTestProduct: true,
@@ -41,7 +43,7 @@ const TEST_PRODUCTS: Product[] = [
   {
     id: "test-gift-card-code-fail",
     name: "Test Gift Card (code, always fails)",
-    category: "gaming",
+    category: "gifts",
     countries: [],
     priceCents: 10_00,
     isTestProduct: true,
@@ -49,7 +51,7 @@ const TEST_PRODUCTS: Product[] = [
   {
     id: "test-gift-card-link-fail",
     name: "Test Gift Card (link, always fails)",
-    category: "shopping",
+    category: "gifts",
     countries: [],
     priceCents: 10_00,
     isTestProduct: true,

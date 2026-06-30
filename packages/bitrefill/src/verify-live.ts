@@ -20,7 +20,7 @@ if (!key) {
 
 const client = new LiveBitrefillClient(key, process.env.BITREFILL_API_BASE);
 
-const SEED_CATEGORIES = ["gaming", "food", "shopping", "mobile_topup"];
+const SEED_CATEGORIES = ["gifts", "phone", "gaming"];
 
 function section(title: string): void {
   console.log(`\n${"=".repeat(60)}\n${title}\n${"=".repeat(60)}`);

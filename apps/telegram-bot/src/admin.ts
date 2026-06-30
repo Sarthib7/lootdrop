@@ -23,12 +23,9 @@ const DEFAULT_POLICY = {
   maxSingleRewardCents: 25_00,
   autoApproveBelowCents: 5_00,
   claimExpiryDays: 30,
-  allowedCategoriesJson: JSON.stringify([
-    "gaming",
-    "food",
-    "shopping",
-    "mobile_topup",
-  ]),
+  // Bitrefill's real test-product categories (gift cards = "gifts",
+  // phone refills = "phone").
+  allowedCategoriesJson: JSON.stringify(["gifts", "phone"]),
   allowSelfRewards: false,
   recipientCooldownHours: 24,
 };
