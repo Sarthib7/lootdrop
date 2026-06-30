@@ -8,40 +8,52 @@
 export interface ParsedReward {
   amount: number; // whole USD
   reason: string;
+  /** A name/@username typed before the amount, if any (e.g. "alice"). */
+  recipientHint?: string;
 }
 
 export type ParseResult =
   | { ok: true; value: ParsedReward }
   | { ok: false; error: string };
 
-const USAGE =
-  "Usage: reply to a member (or pick them from the mention menu) with `/reward <amount> <reason>` — e.g. `/reward 10 great bug report`.";
+// Matches a USD amount token: 10, $10, 10$, 1,000 — recipient comes from the
+// reply, so anything before the amount (a typed name, "with", "@user") is
+// ignored rather than mistaken for the amount.
+const AMOUNT_RE = /^\$?\d[\d,]*\$?$/;
 
 export function parseRewardArgs(raw: string): ParseResult {
   const tokens = (raw ?? "").trim().split(/\s+/).filter(Boolean);
-  // A leading @username is decorative here (recipient comes from the reply /
-  // text_mention), so drop it before reading the amount.
-  if (tokens[0]?.startsWith("@")) tokens.shift();
-
-  const amountTok = tokens.shift();
-  if (!amountTok) return { ok: false, error: USAGE };
-  if (!/^\d+$/.test(amountTok)) {
+  const amountIdx = tokens.findIndex((t) => AMOUNT_RE.test(t));
+  if (amountIdx === -1) {
     return {
       ok: false,
-      error: `Amount must be a whole number of USD (e.g. 10). Got "${amountTok}".`,
+      error: "Include an amount in whole USD — e.g. `/reward 10 great bug report`.",
     };
   }
-  const amount = Number(amountTok);
-  if (amount < 1) return { ok: false, error: "Amount must be at least 1 USD." };
-
-  const reason = tokens.join(" ").trim();
+  const amount = Number(tokens[amountIdx].replace(/[$,]/g, ""));
+  if (!Number.isInteger(amount) || amount < 1) {
+    return {
+      ok: false,
+      error: "Amount must be a whole number of USD (at least 1) — e.g. `/reward 10 great work`.",
+    };
+  }
+  // Everything after the amount is the reason; tokens before it (a typed name /
+  // @username, minus filler words) become the recipient hint.
+  const reason = tokens.slice(amountIdx + 1).join(" ").trim();
   if (reason.length < 3) {
     return {
       ok: false,
-      error: "Add a short reason, e.g. `/reward 10 great bug report`.",
+      error: "Add a short reason after the amount — e.g. `/reward 10 great bug report`.",
     };
   }
-  return { ok: true, value: { amount, reason } };
+  const recipientHint =
+    tokens
+      .slice(0, amountIdx)
+      .filter((t) => !/^(with|to|for)$/i.test(t))
+      .join(" ")
+      .replace(/^@/, "")
+      .trim() || undefined;
+  return { ok: true, value: { amount, reason, recipientHint } };
 }
 
 export interface RecipientInfo {

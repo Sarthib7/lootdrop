@@ -80,3 +80,10 @@ export function confirmKeyboard(claimId: string, productIndex: number): InlineKe
 export function retryKeyboard(claimId: string): InlineKeyboard {
   return new InlineKeyboard().text("🔁 Try again", encode("retry", claimId));
 }
+
+/** Confirm/cancel a reward whose recipient was resolved by name (`token`). */
+export function confirmRewardKeyboard(token: string): InlineKeyboard {
+  return new InlineKeyboard()
+    .text("✅ Confirm", encode("reward_confirm", token))
+    .text("✖️ Cancel", encode("reward_cancel", token));
+}

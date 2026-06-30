@@ -1,24 +1,18 @@
 import type { Context } from "grammy";
 import {
   ClaimError,
-  createClaim,
   getBudgetSnapshot,
   loadPolicy,
   openClaimForSelection,
 } from "@lootdrop/core";
 import { db } from "./deps.js";
-import { ensureCommunity, isAdmin } from "./admin.js";
+import { isAdmin } from "./admin.js";
 import { parseRewardArgs, resolveRecipient } from "./parse.js";
-import { deliverToRecipient, deliveryNote } from "./delivery.js";
-import { logBotError } from "./log.js";
+import { findRecipients } from "./roster.js";
+import { putPending } from "./pending.js";
+import { createAndAnnounceReward } from "./reward.js";
 import { setSelection } from "./session.js";
-import {
-  approvalKeyboard,
-  claimCardText,
-  countryKeyboard,
-  esc,
-  fmtUsd,
-} from "./ui.js";
+import { confirmRewardKeyboard, countryKeyboard, esc, fmtUsd } from "./ui.js";
 
 function isGroup(ctx: Context): boolean {
   const t = ctx.chat?.type;
@@ -40,59 +34,72 @@ export async function handleReward(ctx: Context): Promise<void> {
 
   const parsed = parseRewardArgs(typeof ctx.match === "string" ? ctx.match : "");
   if (!parsed.ok) {
-    await ctx.reply(parsed.error);
+    await ctx.reply(parsed.error, { parse_mode: "Markdown" });
     return;
   }
-  const recipient = resolveRecipient(ctx.message ?? {});
-  if (!recipient) {
-    await ctx.reply(
-      "Reply to the member's message (or pick them from the mention menu) so I know who to reward.",
-    );
-    return;
-  }
-
+  const { amount, reason, recipientHint } = parsed.value;
   const communityId = String(ctx.chat!.id);
-  const created = await ensureCommunity(communityId, ctx.chat!.title ?? "Community");
-  if (created) {
-    await ctx.reply(
-      "🛠️ Initialized LootDrop for this group with default budgets (daily $100 / weekly $500, auto-approve under $5).",
-    );
-  }
+  const createdById = String(fromId);
 
-  const { decision, claim } = await createClaim(db, {
-    communityId,
-    recipientId: recipient.id,
-    amountCents: parsed.value.amount * 100,
-    currency: "USD",
-    reason: parsed.value.reason,
-    createdByType: "human",
-    createdById: String(fromId),
-  });
-
-  if (decision.outcome === "denied") {
-    await ctx.reply(`❌ BountyGuard denied this reward: ${decision.reason}`);
+  // 1. Explicit recipient (reply or text_mention) -> create directly.
+  const explicit = resolveRecipient(ctx.message ?? {});
+  if (explicit) {
+    await createAndAnnounceReward(ctx, {
+      communityId,
+      recipientId: explicit.id,
+      amountCents: amount * 100,
+      reason,
+      createdById,
+    });
     return;
   }
 
-  if (decision.outcome === "auto_approved" && claim) {
-    const botUsername = ctx.me.username;
-    let note: string;
-    try {
-      note = deliveryNote(await deliverToRecipient(ctx.api, botUsername, claim), botUsername);
-    } catch (err) {
-      logBotError("auto-approve delivery", err);
-      note = `⚠️ Couldn't message the recipient right now. They can open it here: https://t.me/${botUsername}?start=claim_${claim.id}`;
+  // 2. Recipient typed by name/@username -> resolve from the roster + confirm.
+  if (recipientHint) {
+    const matches = await findRecipients(communityId, recipientHint);
+    if (matches.length === 1) {
+      const r = matches[0];
+      const token = putPending({
+        communityId,
+        recipientId: r.id,
+        recipientName: r.name ?? r.id,
+        amountCents: amount * 100,
+        reason,
+        createdById,
+      });
+      await ctx.reply(
+        `Reward <b>${esc(r.name ?? r.id)}</b> with <b>${fmtUsd(amount * 100)}</b>?\nReason: ${esc(reason)}`,
+        { parse_mode: "HTML", reply_markup: confirmRewardKeyboard(token) },
+      );
+      return;
+    }
+    if (matches.length > 1) {
+      const names = matches.slice(0, 5).map((m) => `@${m.name ?? m.id}`).join(", ");
+      await ctx.reply(
+        `Several members match "${esc(recipientHint)}": ${esc(names)}. Reply to the right person's message, or @mention them.`,
+        { parse_mode: "HTML" },
+      );
+      return;
     }
     await ctx.reply(
-      `${claimCardText(claim)}\n\n✅ Auto-approved (below threshold). ${note}`,
+      `I haven't seen "${esc(recipientHint)}" post in this group yet, so I can't reward them by name. Reply to their message (or @mention them) once and I'll remember them.`,
       { parse_mode: "HTML" },
     );
     return;
   }
 
+  // 3. No recipient given.
   await ctx.reply(
-    `${claimCardText(claim!)}\n\nNeeds admin approval (at/above the auto-approve threshold).`,
-    { parse_mode: "HTML", reply_markup: approvalKeyboard(claim!.id) },
+    "👉 Reply to the member you want to reward, or include their name: `/reward <name> <amount> <reason>` — e.g. `/reward @alice 10 great bug report`.",
+    { parse_mode: "Markdown" },
+  );
+}
+
+/** /whoami — show the caller's Telegram user id and the chat id (for config). */
+export async function handleWhoami(ctx: Context): Promise<void> {
+  await ctx.reply(
+    `Your Telegram user id: <code>${ctx.from?.id ?? "?"}</code>\nThis chat id: <code>${ctx.chat?.id ?? "?"}</code>`,
+    { parse_mode: "HTML" },
   );
 }
 

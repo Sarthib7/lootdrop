@@ -19,6 +19,27 @@ describe("parseRewardArgs", () => {
     expect(r.ok && r.value.reason).toBe("nice work");
   });
 
+  it("ignores a typed name + $ + filler before the amount", () => {
+    const r = parseRewardArgs("Hrishi with 5$ good bug");
+    expect(r.ok).toBe(true);
+    if (r.ok) {
+      expect(r.value.amount).toBe(5);
+      expect(r.value.reason).toBe("good bug");
+      expect(r.value.recipientHint).toBe("Hrishi");
+    }
+  });
+
+  it("captures the recipient hint from an @username", () => {
+    const r = parseRewardArgs("@alice 10 nice work");
+    expect(r.ok).toBe(true);
+    if (r.ok) expect(r.value.recipientHint).toBe("alice");
+  });
+
+  it("strips a leading $ from the amount", () => {
+    const r = parseRewardArgs("$10 great work");
+    expect(r.ok && r.value.amount).toBe(10);
+  });
+
   it("rejects a non-numeric amount", () => {
     expect(parseRewardArgs("ten bucks").ok).toBe(false);
   });

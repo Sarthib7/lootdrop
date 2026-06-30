@@ -27,7 +27,9 @@ const DEFAULT_POLICY = {
   // phone refills = "phone").
   allowedCategoriesJson: JSON.stringify(["gifts", "phone"]),
   allowSelfRewards: false,
-  recipientCooldownHours: 24,
+  // No per-recipient cooldown by default — creation is already admin-gated and
+  // budget-limited, so rewarding the same contributor twice shouldn't be blocked.
+  recipientCooldownHours: 0,
 };
 
 /**

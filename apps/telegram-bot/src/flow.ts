@@ -13,6 +13,8 @@ import { db, bitrefill } from "./deps.js";
 import { isAdmin } from "./admin.js";
 import { deliverToRecipient, deliveryNote, postAudit } from "./delivery.js";
 import { logBotError } from "./log.js";
+import { takePending } from "./pending.js";
+import { createAndAnnounceReward } from "./reward.js";
 import { clearSelection, getSelection, setSelection } from "./session.js";
 import {
   categoryKeyboard,
@@ -227,6 +229,40 @@ export async function handleConfirm(
       { reply_markup: retryKeyboard(claimId) },
     );
   }
+}
+
+// ---- Reward confirmation (name-resolved recipient, in the group) ----------
+
+export async function handleRewardConfirm(ctx: Context, token: string): Promise<void> {
+  const fromId = ctx.from?.id;
+  if (!fromId || !(await isAdmin(ctx, fromId))) {
+    await ctx
+      .answerCallbackQuery({ text: "Only admins can confirm rewards.", show_alert: true })
+      .catch(() => undefined);
+    return;
+  }
+  const pending = takePending(token);
+  if (!pending) {
+    await ctx
+      .editMessageText("This reward request expired — run /reward again.")
+      .catch(() => undefined);
+    return;
+  }
+  await ctx.editMessageText(`✅ Confirmed reward for ${esc(pending.recipientName)}.`, {
+    parse_mode: "HTML",
+  });
+  await createAndAnnounceReward(ctx, {
+    communityId: pending.communityId,
+    recipientId: pending.recipientId,
+    amountCents: pending.amountCents,
+    reason: pending.reason,
+    createdById: pending.createdById,
+  });
+}
+
+export async function handleRewardCancel(ctx: Context, token: string): Promise<void> {
+  takePending(token);
+  await ctx.editMessageText("✖️ Cancelled.").catch(() => undefined);
 }
 
 export async function handleRetry(ctx: Context, claimId: string): Promise<void> {

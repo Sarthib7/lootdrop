@@ -14,7 +14,9 @@ export type CallbackAction =
   | "category"
   | "product"
   | "confirm"
-  | "retry";
+  | "retry"
+  | "reward_confirm"
+  | "reward_cancel";
 
 const CODE: Record<CallbackAction, string> = {
   approve: "ap",
@@ -24,6 +26,8 @@ const CODE: Record<CallbackAction, string> = {
   product: "pr",
   confirm: "cf",
   retry: "rt",
+  reward_confirm: "rc",
+  reward_cancel: "rx",
 };
 
 const ACTION: Record<string, CallbackAction> = Object.fromEntries(

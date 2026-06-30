@@ -10,6 +10,7 @@ import {
   handleRewardsBudget,
   handleRewardsPending,
   handleStart,
+  handleWhoami,
 } from "./commands.js";
 import {
   handleApproval,
@@ -18,15 +19,30 @@ import {
   handleCountry,
   handleProduct,
   handleRetry,
+  handleRewardCancel,
+  handleRewardConfirm,
 } from "./flow.js";
+import { recordUser } from "./roster.js";
 
 const bot = new Bot(env.token);
+
+// Learn group members from the messages we see (Telegram bots can't list them),
+// so admins can later reward someone by name. Fire-and-forget; never blocks.
+bot.use(async (ctx, next) => {
+  const chat = ctx.chat;
+  const from = ctx.from;
+  if (from && (chat?.type === "group" || chat?.type === "supergroup")) {
+    void recordUser(String(chat.id), from).catch(() => undefined);
+  }
+  await next();
+});
 
 bot.command("start", handleStart);
 bot.command("reward", handleReward);
 bot.command("rewards_pending", handleRewardsPending);
 bot.command("rewards_budget", handleRewardsBudget);
 bot.command("myrewards", handleMyRewards);
+bot.command("whoami", handleWhoami);
 
 // Single inline-button router. Every branch ends by answering the callback query
 // so the client's loading spinner always clears; domain errors become a toast.
@@ -59,6 +75,12 @@ bot.on("callback_query:data", async (ctx) => {
         break;
       case "retry":
         await handleRetry(ctx, claimId);
+        break;
+      case "reward_confirm":
+        await handleRewardConfirm(ctx, claimId);
+        break;
+      case "reward_cancel":
+        await handleRewardCancel(ctx, claimId);
         break;
     }
     await ctx.answerCallbackQuery().catch(() => undefined);
@@ -101,6 +123,7 @@ async function main(): Promise<void> {
     { command: "rewards_pending", description: "List claims awaiting approval (admins)" },
     { command: "rewards_budget", description: "Show remaining reward budget" },
     { command: "myrewards", description: "Show your reward claims" },
+    { command: "whoami", description: "Show your Telegram id and this chat id" },
     { command: "start", description: "Start the bot / claim a reward" },
   ]);
   // Make sure no webhook is set, or getUpdates long polling 409s.

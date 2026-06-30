@@ -36,7 +36,7 @@ await db.communityPolicy.upsert({
     // phone refills = "phone").
     allowedCategoriesJson: JSON.stringify(["gifts", "phone"]),
     allowSelfRewards: false,
-    recipientCooldownHours: 24,
+    recipientCooldownHours: 0,
   },
 });
 

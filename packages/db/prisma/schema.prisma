@@ -126,3 +126,18 @@ model RecipientPreference {
   @@id([platform, recipientId])
   @@map("recipient_preferences")
 }
+
+// Roster of members the bot has observed in a community (Telegram bots cannot
+// enumerate group members, so we learn them from messages). Lets an admin
+// reward "@alice" / "alice" by name instead of replying.
+model KnownUser {
+  communityId String
+  userId      String
+  username    String?
+  firstName   String?
+  updatedAt   DateTime @updatedAt
+
+  @@id([communityId, userId])
+  @@index([communityId])
+  @@map("known_users")
+}
